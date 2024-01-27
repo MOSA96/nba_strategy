@@ -17,7 +17,7 @@ DOWNLOAD_HANDLERS = {
     }
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 PLAYWRIGHT_LAUNCH_OPTIONS = {
-        "headless": False,
+        "headless": True,
     } 
 
 
@@ -27,8 +27,10 @@ PLAYWRIGHT_LAUNCH_OPTIONS = {
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = False
 
-# Configure maximum concurrent requests performed by Scrapy (default: 16)
-#CONCURRENT_REQUESTS = 32
+# Configure maximum con
+# current requests performed by Scrapy (default: 16)
+CONCURRENT_REQUESTS = 1
+PLAYWRIGHT_MAX_PAGES_PER_CONTEXT = 1
 
 # Configure a delay for requests for the same website (default: 0)
 # See https://docs.scrapy.org/en/latest/topics/settings.html#download-delay

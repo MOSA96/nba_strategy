@@ -26,8 +26,12 @@ class GamesSpider(scrapy.Spider):
     }
 
     def start_requests(self):
-        url = "https://www.oddsportal.com/basketball/usa/nba-2022-2023/results/"
-        yield scrapy.Request(url, meta={"playwright": True,
+        start_urls = [f"https://www.oddsportal.com/basketball/usa/nba-2022-2023/results/#/page/{page_number}" for page_number in range(1,29)]
+        for url in start_urls:
+            yield scrapy.Request(url, 
+                                 callback=self.parse, 
+                                 dont_filter = True,
+                                 meta={"playwright": True,
                                         "playwright_page_methods": [
                                         PageMethod("evaluate", scrolling_script),
                                         PageMethod("wait_for_timeout", 10000)
@@ -39,6 +43,7 @@ class GamesSpider(scrapy.Spider):
         item = GamesScraperItem()
         item["season"] = response.xpath("//a[@class='flex items-center justify-center h-8 px-3 bg-gray-medium cursor-pointer active-item-calendar']/text()").get()
         game_dates = response.xpath("//div[@class='eventRow flex w-full flex-col text-xs']").getall()
+        next_page = response.xpath("//div[@class='pagination my-7 flex items-center justify-center']/a[@class='pagination-link']")
         for game_date in game_dates:
             game_date = scrapy.Selector(text=game_date)
             if game_date.xpath("//div[@class='border-black-borders bg-gray-light flex w-full min-w-0 border-l border-r']"):
@@ -48,19 +53,19 @@ class GamesSpider(scrapy.Spider):
             else: 
                 game_link = game_date.xpath("//div[@class='flex w-full items-center']/div[@class='align-center mx-1 flex w-full flex-col items-center gap-1']/div[@class='max-mt:pl-1 flex w-full flex-col gap-1 pt-[2px] text-xs leading-[16px] min-mt:!flex-row min-mt:!gap-2 justify-center']/a[@class='min-mt:!justify-end flex basis-[50%] cursor-pointer items-start justify-start gap-1 overflow-hidden']/@href").get()
                 game_links[date].append(game_link)
-
-
-        breakpoint()
-        # for game in game_links[:2]:
-        #     base_url = "https://www.oddsportal.com"
-        #     game_url = base_url + game
-        #     yield scrapy.Request(game_url, 
-        #                          callback=self.parse_games,
-        #                          meta={"playwright": True,
-        #                                 "playwright_page_methods": [
-        #                                 PageMethod("evaluate", scrolling_script),
-        #                                 PageMethod("wait_for_timeout", 5000)
-        #                                 ],})
+        
+        for game in game_links.keys():
+            for game_url in game_links[game]:
+                base_url = "https://www.oddsportal.com"
+                complete_url = base_url + game_url
+                yield scrapy.Request(complete_url, 
+                                    callback=self.parse_games,
+                                    meta={"playwright": True,
+                                          'date':game,
+                                            "playwright_page_methods": [
+                                            PageMethod("evaluate", scrolling_script),
+                                            PageMethod("wait_for_timeout", 5000),
+                                            ],})
 
 
     def parse_games(self, response):
